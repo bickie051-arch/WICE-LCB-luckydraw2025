@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lucky Draw</title>
+
+<style>
+:root{
+  --primary-color:#003A8F;
+  --secondary-color:#1890FF;
+  --accent-color:#FADB14;
+  --win-red:#d4380d;
+}
+
+body{
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));
+  margin:0;
+}
+
+/* ✅ เต็มจอ */
+.container{
+  width:100%;
+  max-width:none;
+  margin:0;
+  background:#fff;
+  border-radius:0;
+  padding:28px 20px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.16);
+  text-align:center;
+}
+
+.logo img{ max-height:110px; margin:10px 0 10px; }
+
+h1{ margin:0; color:var(--primary-color); }
+.subtitle{ margin:10px 0 18px; color:#666; }
+
+/* Controls */
+.controls{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  align-items:center;
+  flex-wrap:wrap;
+  margin:10px 0 8px;
+}
+select{
+  font-size:16px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.15);
+  min-width:360px;
+  max-width:92vw;
+}
+button{
+  font-size:18px;
+  padding:12px 22px;
+  border-radius:999px;
+  border:none;
+  cursor:pointer;
+  background:var(--primary-color);
+  color:#fff;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+button:disabled{ background:#aaa; cursor:not-allowed; }
+
+/* Pills */
+.stage{
+  margin:10px auto 0;
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  max-width:1200px;
+}
+.pill{
+  padding:8px 12px;
+  border-radius:999px;
+  background:#f2f4f7;
+  color:#333;
+  font-size:14px;
+  border:1px solid rgba(0,0,0,0.06);
+}
+.pill.done{
+  background:rgba(0,0,0,.05);
+  color:#777;
+  text-decoration:line-through;
+}
+.pill.active{
+  background:rgba(24,144,255,.12);
+  border-color:rgba(24,144,255,.35);
+  color:var(--primary-color);
+  font-weight:800;
+}
+
+/* Countdown + Animation */
+.animation-box{
+  margin:14px auto 0;
+  padding:22px;
+  border-radius:18px;
+  background:#f0f5ff;
+  min-height:160px;
+  display:none;
+  flex-direction:column;
+  justify-content:center;
+  gap:10px;
+  max-width:1200px;
+}
+.countdown{
+  font-size:56px;
+  font-weight:1100;
+  color:var(--win-red);
+  line-height:1;
+}
+.spintext{
+  font-size:22px;
+  font-weight:900;
+  color:var(--primary-color);
+}
+.spinner{ animation:pulse 1s infinite; }
+@keyframes pulse{
+  0%{opacity:.35} 50%{opacity:1} 100%{opacity:.35}
+}
+
+/* ✅ Result layout: centered area but full-row cards span across */
+.grid{
+  margin-top:18px;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:14px;
+  text-align:left;
+
+  width:100%;
+  max-width:1200px;
+  margin-left:auto;
+  margin-right:auto;
+}
+@media (min-width: 1000px){
+  .grid{ grid-template-columns:1fr 1fr; align-items:start; }
+}
+
+/* ✅ ให้ผลรางวัลแต่ละกล่อง "เต็มแนว" และอยู่กลาง */
+.big-winner,
+.batch-results{
+  grid-column: 1 / -1;
+  width:100%;
+  justify-self:center;
+}
+
+/* Big prizes 1–3 */
+.big-winner{
+  display:none;
+  border-radius:18px;
+  padding:20px;
+  background:radial-gradient(circle at top left, rgba(250,219,20,.60), rgba(24,144,255,.10) 55%, #fff 100%);
+  border:3px solid var(--accent-color);
+  box-shadow:0 14px 34px rgba(0,0,0,.18);
+  position:relative;
+  overflow:hidden;
+}
+.big-winner::after{
+  content:"";
+  position:absolute;
+  top:-70px; right:-70px;
+  width:190px; height:190px;
+  background:rgba(250,219,20,.33);
+  border-radius:50%;
+  filter:blur(2px);
+}
+.big-winner h2{
+  margin:0 0 12px;
+  color:var(--primary-color);
+  font-size:28px;
+  font-weight:1100;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.big-card{
+  background:#fff;
+  border-radius:16px;
+  padding:18px;
+  border:1px solid rgba(0,0,0,.10);
+}
+.big-title{ font-weight:1100; font-size:20px; color:var(--primary-color); }
+.big-amount{ font-weight:1100; font-size:28px; color:var(--win-red); margin-top:6px; }
+.big-name{ margin-top:10px; font-size:30px; font-weight:1200; color:#111; line-height:1.25; }
+
+/* Batch prizes 4–5 (3–4 columns, centered cards) */
+.batch-results{
+  display:none;
+  background:#fafafa;
+  border-radius:16px;
+  padding:18px;
+  border:1px solid rgba(0,0,0,0.06);
+}
+.batch-results h3{ margin:0 0 12px; color:var(--primary-color); }
+
+.batch-grid{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:grid;
+  gap:10px 16px;
+  grid-template-columns:1fr;     /* mobile */
+  justify-items:center;           /* ✅ การ์ดอยู่กลาง */
+}
+@media (min-width: 600px){
+  .batch-grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); } /* ✅ 3 cols */
+}
+@media (min-width: 1200px){
+  .batch-grid{ grid-template-columns:repeat(4, minmax(0, 1fr)); } /* ✅ 4 cols */
+}
+.batch-item{
+  width:100%;
+  max-width:320px;
+  background:#fff;
+  border:1px solid rgba(0,0,0,0.08);
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:750;
+  font-size:14px;
+}
+
+/* Final summary */
+.final-summary{
+  display:none;
+  margin:18px auto 0;
+  text-align:left;
+  background:#ffffff;
+  border-radius:16px;
+  padding:18px;
+  border:1px solid rgba(0,0,0,0.08);
+  width:100%;
+  max-width:1400px;
+}
+.final-summary h2{ margin:0 0 10px; color:var(--primary-color); }
+.final-top3{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+  margin:10px 0 14px;
+}
+@media (min-width: 900px){
+  .final-top3{ grid-template-columns: 1fr 1fr 1fr; }
+}
+.top3-card{
+  border-radius:16px;
+  padding:16px;
+  background:radial-gradient(circle at top left, rgba(250,219,20,.60), rgba(24,144,255,.06) 60%, #fff 100%);
+  border:2px solid var(--accent-color);
+  box-shadow:0 10px 26px rgba(0,0,0,.14);
+}
+.top3-rank{
+  font-size:30px;
+  font-weight:1200;
+  color:var(--primary-color);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.top3-prize{ margin-top:6px; font-size:18px; font-weight:1100; color:var(--primary-color); }
+.top3-amount{ margin-top:4px; font-size:24px; font-weight:1200; color:var(--win-red); }
+.top3-winner{ margin-top:10px; font-size:22px; font-weight:1200; color:#111; line-height:1.25; }
+.final-rest h4{ margin:14px 0 8px; color:#333; }
+.final-rest ul{ margin:0; padding-left:18px; }
+.final-rest li{ margin-bottom:6px; }
+
+/* Actions */
+.actions{
+  display:none;
+  margin:14px auto 0;
+  justify-content:center;
+  gap:10px;
+  max-width:1200px;
+}
+.actions button.neutral{ background:#444; }
+.actions button.secondary{ background:#2f54eb; }
+.actions button{ background:var(--secondary-color); }
+
+/* Print */
+@media print{
+  body{ background:#fff; }
+  .controls,.stage,.animation-box,.actions{ display:none !important; }
+  .container{ box-shadow:none; margin:0; border-radius:0; }
+}
+
+.footer-note{ margin:14px auto 0; color:#777; font-size:13px; max-width:1600px; }
+</style>
+</head>
+
+<body>
+<div class="container" id="printArea">
+  <div class="logo">
+    <img src="logo.png" alt="Company Logo">
+  </div>
+
+  <h1>🎉 Lucky Draw 2025 🎉</h1>
+  <div class="subtitle">เลือกจับรางวัลก่อน-หลังได้ • Countdown 10→1 ก่อนเฉลยทุกครั้ง</div>
+
+  <div class="controls">
+    <select id="prizeSelect"></select>
+    <button id="drawBtn">🎁 เริ่มสุ่มรางวัลที่เลือก</button>
+  </div>
+
+  <div class="stage" id="stagePills"></div>
+
+  <div class="animation-box spinner" id="animationBox">
+    <div class="countdown" id="countdown">10</div>
+    <div class="spintext" id="spinText">กำลังสุ่ม...</div>
+  </div>
+
+  <div class="grid">
+    <div class="big-winner" id="bigWinnerBox">
+      <h2 id="bigTitle">🏆 ผลรางวัลใหญ่</h2>
+      <div class="big-card" id="bigCard"></div>
+    </div>
+
+    <div class="batch-results" id="batchResults">
+      <h3 id="batchTitle">📋 ผลรางวัล</h3>
+      <ol class="batch-grid" id="batchList"></ol>
+    </div>
+  </div>
+
+  <div class="final-summary" id="finalSummary">
+    <h2>✅ สรุปผลรางวัลทั้งหมด</h2>
+    <div id="finalContent"></div>
+  </div>
+
+  <div class="actions" id="actions">
+    <button class="neutral" id="printBtn">🖨️ Print</button>
+    <button class="secondary" id="exportBtn">📄 Export Excel (CSV)</button>
+  </div>
+
+  <div class="footer-note" id="remainNote"></div>
+</div>
+
+<script>
+// ✅ รายชื่อพนักงาน (pool)
+let pool = [
+"คุณเพลิน นายนิธิพจน์ สามงามนุ (Messenger)",
+"คุณปาล์ม นายบุญยสิทธ์ มาลาสวัสดิ์ (Messenger)",
+"คุณสมอน นางสาวสมอน โคนจวง (Maid)",
+"คุณแจ๊ค นายสุรชัย เกินกระโทก (Messenger)",
+"คุณแก้ว นางสาววรลักษณ์ วินทะไชย (Maid)",
+"คุณเจี๊ยบ นางสาวฐานิตา กูดอั้ว (Assistant Billing Manager)",
+"คุณกิ๊ก นางสาววรรณพร จรูญรัตน์ (Senior Billing Executive)",
+"คุณหญิง นางสาวสุภาวดี พลเยี่ยม (Billing Executive)",
+"คุณต่าย นางสาวพิศมัย ศรีสุทธิ์ (Billing Executive)",
+"คุณเกล นางสาววีรนันท์ ศิริษา (Billing Executive)",
+"คุณมิลค์ นางสาวพิมผกา ปวงงาม (Finance Executive - Payable)",
+"คุณโบว์ นางสาวณัฐกานต์ บึกนันตา (Billing Executive)",
+"คุณโบ นางสาวณัฐวรรณ สงเคราะห์ (Finance Executive - Payable)",
+"คุณเหมี่ยว นางสาวพัชรี พิมพ์พา (Senior Customs Broker Executive - Import)",
+"คุณโอ๊ต นางสาวนิตยา ไตรพรม (Assistant Customs Broker Manager)",
+"คุณเมฆ นายธีรวัฒน์ สุขลิ้ม (Shipping Executive)",
+"คุณต้น นายธนโชติ เล็กบรรเทิง (Shipping Executive)",
+"คุณแพรว นางสาวเสาวณีย์ เพ็ชรครุธ (Senior Customs Broker Executive - Export)",
+"คุณปอ นายธวัชชัย ภานุพันธ์ (Customs Broker Executive - Import)",
+"คุณจ๋า นางสาวจุฑามาศ เอิบสำโรง (Customs Broker Executive - Import)",
+"คุณต่าย นางสาวอุ่นเรือน พิมพ์ดี (Customs Broker Executive - Import)",
+"คุณเมย์ นางสาวกนกวรรณ อุตสาหประดิษฐ์ (Customs Broker Executive - Export)",
+"คุณทราย นางสาวศิริพร แพไธสง (Customs Broker Executive - Import)",
+"คุณนก นางสาวผกาวดี โกศิริ (Customs Broker Executive - Import)",
+"คุณชมพู นางสาวชัญญานุช ช้างเนียม (Customs Broker Executive - Export)",
+"คุณBen นางสาวศุภรา ธนาศิริเจริญ (Customs Broker Executive - Import)",
+"คุณฟิวส์ นางสุภาภรณ์ ขยันทำ (Senior People Operations Executive)",
+"คุณเอ๋ นายจิรวัฒน์ คูหะมณี (Safety Manager)",
+"คุณบุ๋ม นางสาววลิษา สมอ่อน (Assistant Transportation Manager)",
+"คุณแพ็ก นางสาวมยุรีย์ กันใจ (CS Executive - Transportation)",
+"คุณเกด นางสาวศรีประภา สารีบุตร (Senior CS Executive - Transportation)",
+"คุณอบเชย นางสาวจันทนา คงไทย (CS Executive - Transportation)",
+"คุณนิ้งหน่อง นางสาวกุลณัฐ บุบผาโภชน์ (CS Executive - Transportation)",
+"คุณนก นางสาวพัชรา เรืองสา (CS Executive - Transportation)",
+"คุณหมอก นางสาวระพีพรรณ อินนันชัย (CS Executive - Transportation)",
+"คุณปีใหม่ นางสาวพรสุภา สุภาพรหม (CS Executive - Transportation)",
+"คุณน้อง นางสาวณัฎฐ์กานดา พาแก้ว (CS Executive - Transportation)",
+"คุณนุ นายณัฐพงษ์ ภาษีดา (Transportation Maintenance Executive)",
+"คุณแอ็ด นายชัยรัตน์ ดุนา (Transportation Maintenance Executive)",
+"คุณหนุ่ม นายนัทธี บุญปาน (Transportation Maintenance Executive)",
+"คุณเอก นายเอกชัย การงาน (Transportation Maintenance Executive)",
+"คุณโอ๊ต นายวัชรินทร์ ดุนา (Transportation Maintenance Executive)",
+"คุณเสก นายพันธวัช เพ็ชรรัตน์ (Transportation Maintenance Executive)"
+];
+
+// ✅ รางวัล
+const prizes = [
+  { id:"p1", label:"รางวัลที่ 1 (5,000 บาท) x1", prizeName:"รางวัลที่ 1", amount:5000, count:1, mode:"single", rank:1 },
+  { id:"p2", label:"รางวัลที่ 2 (3,000 บาท) x1", prizeName:"รางวัลที่ 2", amount:3000, count:1, mode:"single", rank:2 },
+  { id:"p3", label:"รางวัลที่ 3 (2,000 บาท) x1", prizeName:"รางวัลที่ 3", amount:2000, count:1, mode:"single", rank:3 },
+  { id:"p4", label:"รางวัลที่ 4 (1,000 บาท) x20", prizeName:"รางวัลที่ 4", amount:1000, count:20, mode:"batch" },
+  { id:"p5", label:"รางวัลที่ 5 (500 บาท) x20",  prizeName:"รางวัลที่ 5", amount:500,  count:20, mode:"batch" }
+];
+
+// ✅ ล็อกผลตาม CSV (100%)
+const LOCKED_RESULTS = {
+  p1: ["คุณนิ้งหน่อง นางสาวกุลณัฐ บุบผาโภชน์ (CS Executive - Transportation)"],
+  p2: ["คุณต้น นายธนโชติ เล็กบรรเทิง (Shipping Executive)"],
+  p3: ["คุณแพ็ก นางสาวมยุรีย์ กันใจ (CS Executive - Transportation)"],
+  p4: [
+    "คุณแจ๊ค นายสุรชัย เกินกระโทก (Messenger)",
+    "คุณหญิง นางสาวสุภาวดี พลเยี่ยม (Billing Executive)",
+    "คุณแก้ว นางสาววรลักษณ์ วินทะไชย (Maid)",
+    "คุณBen นางสาวศุภรา ธนาศิริเจริญ (Customs Broker Executive - Import)",
+    "คุณฟิวส์ นางสุภาภรณ์ ขยันทำ (Senior People Operations Executive)",
+    "คุณชมพู นางสาวชัญญานุช ช้างเนียม (Customs Broker Executive - Export)",
+    "คุณทราย นางสาวศิริพร แพไธสง (Customs Broker Executive - Import)",
+    "คุณปาล์ม นายบุญยสิทธ์ มาลาสวัสดิ์ (Messenger)",
+    "คุณหมอก นางสาวระพีพรรณ อินนันชัย (CS Executive - Transportation)",
+    "คุณนุ นายณัฐพงษ์ ภาษีดา (Transportation Maintenance Executive)",
+    "คุณเอก นายเอกชัย การงาน (Transportation Maintenance Executive)",
+    "คุณแพรว นางสาวเสาวณีย์ เพ็ชรครุธ (Senior Customs Broker Executive - Export)",
+    "คุณเจี๊ยบ นางสาวฐานิตา กูดอั้ว (Assistant Billing Manager)",
+    "คุณต่าย นางสาวพิศมัย ศรีสุทธิ์ (Billing Executive)",
+    "คุณอบเชย นางสาวจันทนา คงไทย (CS Executive - Transportation)",
+    "คุณกิ๊ก นางสาววรรณพร จรูญรัตน์ (Senior Billing Executive)",
+    "คุณต่าย นางสาวอุ่นเรือน พิมพ์ดี (Customs Broker Executive - Import)",
+    "คุณมิลค์ นางสาวพิมผกา ปวงงาม (Finance Executive - Payable)",
+    "คุณปอ นายธวัชชัย ภานุพันธ์ (Customs Broker Executive - Import)",
+    "คุณเมฆ นายธีรวัฒน์ สุขลิ้ม (Shipping Executive)"
+  ],
+  p5: [
+    "คุณนก นางสาวผกาวดี โกศิริ (Customs Broker Executive - Import)",
+    "คุณเหมี่ยว นางสาวพัชรี พิมพ์พา (Senior Customs Broker Executive - Import)",
+    "คุณโอ๊ต นายวัชรินทร์ ดุนา (Transportation Maintenance Executive)",
+    "คุณน้อง นางสาวณัฎฐ์กานดา พาแก้ว (CS Executive - Transportation)",
+    "คุณหนุ่ม นายนัทธี บุญปาน (Transportation Maintenance Executive)",
+    "คุณจ๋า นางสาวจุฑามาศ เอิบสำโรง (Customs Broker Executive - Import)",
+    "คุณเมย์ นางสาวกนกวรรณ อุตสาหประดิษฐ์ (Customs Broker Executive - Export)",
+    "คุณเอ๋ นายจิรวัฒน์ คูหะมณี (Safety Manager)",
+    "คุณเกล นางสาววีรนันท์ ศิริษา (Billing Executive)",
+    "คุณเพลิน นายนิธิพจน์ สามงามนุ (Messenger)",
+    "คุณโบ นางสาวณัฐวรรณ สงเคราะห์ (Finance Executive - Payable)",
+    "คุณโอ๊ต นางสาวนิตยา ไตรพรม (Assistant Customs Broker Manager)",
+    "คุณสมอน นางสาวสมอน โคนจวง (Maid)",
+    "คุณเสก นายพันธวัช เพ็ชรรัตน์ (Transportation Maintenance Executive)",
+    "คุณนก นางสาวพัชรา เรืองสา (CS Executive - Transportation)",
+    "คุณแอ็ด นายชัยรัตน์ ดุนา (Transportation Maintenance Executive)",
+    "คุณโบว์ นางสาวณัฐกานต์ บึกนันตา (Billing Executive)",
+    "คุณเกด นางสาวศรีประภา สารีบุตร (Senior CS Executive - Transportation)",
+    "คุณปีใหม่ นางสาวพรสุภา สุภาพรหม (CS Executive - Transportation)",
+    "คุณบุ๋ม นางสาววลิษา สมอ่อน (Assistant Transportation Manager)"
+  ]
+};
+
+// state
+const completed = new Set();
+const resultsAll = []; // {prizeId, prizeName, amount, winner}
+
+// UI refs
+const prizeSelect = document.getElementById("prizeSelect");
+const drawBtn = document.getElementById("drawBtn");
+const stagePills = document.getElementById("stagePills");
+
+const animationBox = document.getElementById("animationBox");
+const countdownEl = document.getElementById("countdown");
+const spinTextEl = document.getElementById("spinText");
+
+const bigWinnerBox = document.getElementById("bigWinnerBox");
+const bigTitle = document.getElementById("bigTitle");
+const bigCard = document.getElementById("bigCard");
+
+const batchResults = document.getElementById("batchResults");
+const batchTitle = document.getElementById("batchTitle");
+const batchList = document.getElementById("batchList");
+
+const finalSummary = document.getElementById("finalSummary");
+const finalContent = document.getElementById("finalContent");
+const actions = document.getElementById("actions");
+const printBtn = document.getElementById("printBtn");
+const exportBtn = document.getElementById("exportBtn");
+
+const remainNote = document.getElementById("remainNote");
+
+function updateRemain(){
+  remainNote.textContent = `รายชื่อที่ยังไม่ถูกรางวัลคงเหลือ: ${pool.length} คน`;
+}
+
+function renderSelect(){
+  prizeSelect.innerHTML = "";
+  const available = prizes.filter(p => !completed.has(p.id));
+  if(available.length === 0){
+    const opt = document.createElement("option");
+    opt.textContent = "จับรางวัลครบทั้งหมดแล้ว";
+    opt.value = "";
+    prizeSelect.appendChild(opt);
+    prizeSelect.disabled = true;
+    drawBtn.disabled = true;
+    return;
+  }
+  available.forEach(p=>{
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.label;
+    prizeSelect.appendChild(opt);
+  });
+  prizeSelect.disabled = false;
+  drawBtn.disabled = false;
+}
+
+function renderPills(){
+  stagePills.innerHTML = "";
+  prizes.forEach(p=>{
+    const div = document.createElement("div");
+    div.className = "pill" + (completed.has(p.id) ? " done" : "");
+    if(!completed.has(p.id) && prizeSelect.value === p.id) div.classList.add("active");
+    div.textContent = p.label;
+    stagePills.appendChild(div);
+  });
+}
+
+function medal(rank){
+  if(rank===1) return "🥇";
+  if(rank===2) return "🥈";
+  if(rank===3) return "🥉";
+  return "🏆";
+}
+
+function removeFromPool(name){
+  const idx = pool.indexOf(name);
+  if(idx !== -1) pool.splice(idx, 1);
+}
+
+function getLockedWinners(prize){
+  const list = LOCKED_RESULTS[prize.id] || [];
+  return list.slice(0, prize.count);
+}
+
+function startCountdownAndReveal(prize){
+  bigWinnerBox.style.display = "none";
+  batchResults.style.display = "none";
+  finalSummary.style.display = "none";
+
+  drawBtn.disabled = true;
+  prizeSelect.disabled = true;
+
+  animationBox.style.display = "flex";
+  animationBox.classList.add("spinner");
+
+  const spinInterval = setInterval(()=>{
+    const randomEmp = pool.length ? pool[Math.floor(Math.random() * pool.length)] : "กำลังสุ่ม...";
+    spinTextEl.innerHTML = `🎁 ${prize.prizeName} • ${prize.amount.toLocaleString()} บาท<br>🎉 ${randomEmp}`;
+  }, 120);
+
+  let remaining = 10;
+  countdownEl.textContent = remaining;
+
+  const countdownTimer = setInterval(()=>{
+    remaining--;
+    if(remaining >= 1){
+      countdownEl.textContent = remaining;
+      return;
+    }
+    clearInterval(countdownTimer);
+    clearInterval(spinInterval);
+    animationBox.classList.remove("spinner");
+    revealLockedWinners(prize);
+  }, 1000);
+}
+
+function revealLockedWinners(prize){
+  const lockedWinners = getLockedWinners(prize);
+
+  if(completed.has(prize.id)){
+    alert("รางวัลนี้ถูกจับไปแล้ว");
+    prizeSelect.disabled = false;
+    drawBtn.disabled = false;
+    return;
+  }
+
+  if(prize.mode === "single"){
+    const winner = lockedWinners[0] || "-";
+    resultsAll.push({ prizeId:prize.id, prizeName:prize.prizeName, amount:prize.amount, winner });
+    removeFromPool(winner);
+
+    bigTitle.textContent = `${medal(prize.rank)} ${prize.prizeName} (${prize.amount.toLocaleString()} บาท)`;
+    bigCard.innerHTML = `
+      <div class="big-title">${prize.prizeName}</div>
+      <div class="big-amount">${prize.amount.toLocaleString()} บาท</div>
+      <div class="big-name">🎉 ${winner}</div>
+    `;
+    bigWinnerBox.style.display = "block";
+  } else {
+    batchTitle.textContent = `📋 ${prize.prizeName} (${prize.amount.toLocaleString()} บาท) จำนวน ${prize.count} รางวัล`;
+    batchList.innerHTML = "";
+
+    lockedWinners.forEach(winner=>{
+      resultsAll.push({ prizeId:prize.id, prizeName:prize.prizeName, amount:prize.amount, winner });
+      removeFromPool(winner);
+
+      const item = document.createElement("li");
+      item.className = "batch-item";
+      item.textContent = winner;
+      batchList.appendChild(item);
+    });
+    batchResults.style.display = "block";
+  }
+
+  completed.add(prize.id);
+  updateRemain();
+
+  renderSelect();
+  renderPills();
+
+  if(completed.size === prizes.length){
+    showFinalSummary();
+    actions.style.display = "flex";
+  }else{
+    prizeSelect.disabled = false;
+    drawBtn.disabled = false;
+  }
+}
+
+function showFinalSummary(){
+  const order = ["p1","p2","p3","p4","p5"];
+  const grouped = {};
+  order.forEach(id => grouped[id] = []);
+  resultsAll.forEach(r => grouped[r.prizeId].push(r));
+
+  const top3HTML = ["p1","p2","p3"].map((id, idx)=>{
+    const p = prizes.find(x=>x.id===id);
+    const r = grouped[id][0];
+    const w = r ? r.winner : "-";
+    return `
+      <div class="top3-card">
+        <div class="top3-rank">${medal(idx+1)} อันดับ ${idx+1}</div>
+        <div class="top3-prize">${p.prizeName}</div>
+        <div class="top3-amount">${p.amount.toLocaleString()} บาท</div>
+        <div class="top3-winner">🎉 ${w}</div>
+      </div>
+    `;
+  }).join("");
+
+  let restHTML = `<div class="final-rest">`;
+  ["p4","p5"].forEach(id=>{
+    const p = prizes.find(x=>x.id===id);
+    restHTML += `<h4>${p.prizeName} (${p.amount.toLocaleString()} บาท) จำนวน ${p.count} รางวัล</h4>`;
+    restHTML += `<ul>`;
+    grouped[id].forEach(r=>{
+      restHTML += `<li>${p.prizeName} (${p.amount.toLocaleString()} บาท) : ${r.winner}</li>`;
+    });
+    restHTML += `</ul>`;
+  });
+  restHTML += `</div>`;
+
+  finalContent.innerHTML = `
+    <div class="final-top3">${top3HTML}</div>
+    ${restHTML}
+  `;
+  finalSummary.style.display = "block";
+}
+
+function exportCSV(){
+  const headers = ["Prize","Amount","Winner"];
+  const lines = [headers.join(",")];
+  const order = ["p1","p2","p3","p4","p5"];
+
+  order.forEach(id=>{
+    resultsAll.filter(r=>r.prizeId===id).forEach(r=>{
+      lines.push(`"${r.prizeName}","${r.amount}","${r.winner.replaceAll('"','""')}"`);
+    });
+  });
+
+  const csv = "\uFEFF" + lines.join("\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "lucky_draw_results.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// events
+drawBtn.onclick = () => {
+  const id = prizeSelect.value;
+  if(!id) return;
+  const prize = prizes.find(p=>p.id===id);
+  if(!prize) return;
+  startCountdownAndReveal(prize);
+};
+prizeSelect.onchange = renderPills;
+
+printBtn.onclick = () => window.print();
+exportBtn.onclick = exportCSV;
+
+// init
+renderSelect();
+renderPills();
+updateRemain();
+animationBox.style.display = "none";
+</script>
+</body>
+</html>
